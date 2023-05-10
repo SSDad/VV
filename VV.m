@@ -15,7 +15,7 @@ hFig = figure('MenuBar',            'none', ...
 addToolbar(hFig);
                 
 data.Panel = addPanel(hFig);
-% data.Panel.LoadImage.Comp = addComponents2Panel_LoadImage(data.Panel.LoadImage.hPanel);
+data.Panel.LoadImage.Comp = addComponents2Panel_LoadImage(data.Panel.LoadImage.hPanel);
 % data.Panel.Selection.Comp = addComponents2Panel_Selection(data.Panel.Selection.hPanel);
 % data.Panel.View.Comp = addComponents2Panel_View(data.Panel.View.hPanel);
 % data.Panel.Snake.Comp = addComponents2Panel_Snake(data.Panel.Snake.hPanel);
