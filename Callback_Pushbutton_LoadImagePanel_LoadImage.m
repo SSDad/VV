@@ -38,24 +38,20 @@ end
 data.V = V;
 data.SI = SI;
 
-waitbar(1/3, hWB, 'Initializing View...');
+waitbar(1/2, hWB, 'Initializing View...');
 
-% %%  first slice in image viewer
-% % first slice
-% iSlice = 1;
-% I = data.Image.Images(:,:,iSlice);
-%     
-% % fill Image Info 
-% data.Panel.LoadImage.Comp.hEdit.ImageInfo(2).String = [num2str(mImgSize), 'x', num2str(nImgSize)];
-% data.Panel.LoadImage.Comp.hEdit.ImageInfo(2).ForegroundColor = 'c';
-% 
-% data.Panel.LoadImage.Comp.hEdit.ImageInfo(3).String = num2str(Image.RA.PixelExtentInWorldX);
-% data.Panel.LoadImage.Comp.hEdit.ImageInfo(3).ForegroundColor = 'c';
-% 
-% %  image viewer
-% hA = data.Panel.View.Comp.hAxis.Image;
-% hPlotObj.Image = imshow(I, Image.RA, [], 'parent', hA);
-% axis(data.Panel.View.Comp.hAxis.Image, 'tight', 'equal')
+%%  middle slice in image viewer
+iSliceA = round(SI.ImageSize(3)/2);
+IA = V(:,:,iSliceA);
+xmin = SI.PatientPositions(iSliceA, 1);
+ymin = SI.PatientPositions(iSliceA, 2);
+xL = SI.PixelSpacings(1)*(SI.ImageSize(2)-1);
+yL = SI.PixelSpacings(2)*(SI.ImageSize(1)-1);
+RA = imref2d(SI.ImageSize(1:2), [xmin xmin+xL], [ymin ymin+yL]);
+hA = data.Panel.View.Comp.hAxis.Image(1);
+hPlotObj.Image(1) = imshow(IA, RA, [], 'parent', hA);
+axis(hA, 'tight', 'equal')
+
 % 
 % % template box
 % hPlotObj.LBox = rectangle(hA, 'Position', [0 0 0 0], 'EdgeColor', 'g', 'LineWidth', 1);
