@@ -35,12 +35,15 @@ else
     save(ffn_mat, 'V', 'SI');
 end
 
-data.V = V;
-data.SI = SI;
+data.Image.V = V;
+data.Image.SI = SI;
 
 waitbar(1/2, hWB, 'Initializing View...');
 
 %%  middle slice in image viewer
+AC = [255 255 102]/255;
+
+% Axial
 iSliceA = round(SI.ImageSize(3)/2);
 IA = V(:,:,iSliceA);
 xmin = SI.PatientPositions(iSliceA, 1);
@@ -48,9 +51,69 @@ ymin = SI.PatientPositions(iSliceA, 2);
 xL = SI.PixelSpacings(1)*(SI.ImageSize(2)-1);
 yL = SI.PixelSpacings(2)*(SI.ImageSize(1)-1);
 RA = imref2d(SI.ImageSize(1:2), [xmin xmin+xL], [ymin ymin+yL]);
-hA = data.Panel.View.Comp.hAxis.Image(1);
-hPlotObj.Image(1) = imshow(IA, RA, [], 'parent', hA);
+hA = data.Panel.View.Comp.hAxis(1).Image;
+hPlotObj(1).Image = imshow(IA, RA, [], 'parent', hA);
 axis(hA, 'tight', 'equal')
+hA.XColor = AC;
+hA.YColor = AC;
+
+data.Image.RA = RA;
+
+hPlotObj(1).X = images.roi.Crosshair(hA, 'Position', [xmin+xL/2 ymin+yL/2], ...
+                                         LineWidth=0.5, Color='c', Tag = 'A');
+addlistener(hPlotObj(1).X, 'MovingROI', @CB_XMoving);
+
+% Sagittal
+iSliceS = round(SI.ImageSize(2)/2);
+IS = squeeze(V(:, iSliceS, :));
+IS = IS';
+% IS = imrotate(IS, 90);
+% IS = flipud(IS);
+ymin = SI.PatientPositions(1, 2);
+zmin = SI.PatientPositions(1, 3);
+zmax = SI.PatientPositions(end, 3);
+RS = imref2d(SI.ImageSize([3, 1]), [ymin ymin+yL], [zmin zmax]);
+hA = data.Panel.View.Comp.hAxis(4).Image;
+
+hPlotObj(4).Image = imshow(IS, RS, [], 'parent', hA);
+
+axis(hA, 'tight', 'equal')
+hA.XAxisLocation = 'bottom';
+hA.YDir = 'normal';
+hA.XColor = AC;
+hA.YColor = AC;
+
+data.Image.RS = RS;
+
+hPlotObj(4).X = images.roi.Crosshair(hA, 'Position', [ymin+yL/2 (zmin+zmax)/2], ...
+                                         LineWidth=0.5, Color='c', Tag = 'S');
+addlistener(hPlotObj(4).X, 'MovingROI', @CB_XMoving);
+
+
+% Coronal
+iSliceC = round(SI.ImageSize(1)/2);
+IC = squeeze(V(iSliceC, :, :));
+IC = IC';
+% IC = imrotate(IC, 90);
+% IC = flipud(IC);
+RC = imref2d(SI.ImageSize([3, 2]), [xmin xmin+xL], [zmin zmax]);
+hA = data.Panel.View.Comp.hAxis(3).Image;
+hPlotObj(3).Image = imshow(IC, RC, [], 'parent', hA);
+
+axis(hA, 'tight', 'equal')
+hA.XAxisLocation = 'bottom';
+hA.YDir = 'normal';
+hA.XColor = AC;
+hA.YColor = AC;
+
+data.Image.RC = RC;
+
+hPlotObj(3).X = images.roi.Crosshair(hA, 'Position', [xmin+xL/2 (zmin+zmax)/2], ...
+                                         LineWidth=0.5, Color='c', Tag = 'C');
+addlistener(hPlotObj(3).X, 'MovingROI', @CB_XMoving);
+
+%% save data
+data.Panel.View.Comp.hPlotObj = hPlotObj;
 
 % 
 % % template box

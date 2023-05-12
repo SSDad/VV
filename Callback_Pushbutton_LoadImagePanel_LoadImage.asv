@@ -41,13 +41,61 @@ data.SI = SI;
 waitbar(1/2, hWB, 'Initializing View...');
 
 %%  middle slice in image viewer
+AC = [255 255 102]/255;
+
+% Axial
 iSliceA = round(SI.ImageSize(3)/2);
 IA = V(:,:,iSliceA);
-xmin = SI.PatientPositions()
-RA = imref2d(IA, )
-hA = data.Panel.View.Comp.hAxis.Image(1);
-hPlotObj.Image(1) = imshow(IA, RA, [], 'parent', hA);
+xmin = SI.PatientPositions(iSliceA, 1);
+ymin = SI.PatientPositions(iSliceA, 2);
+xL = SI.PixelSpacings(1)*(SI.ImageSize(2)-1);
+yL = SI.PixelSpacings(2)*(SI.ImageSize(1)-1);
+RA = imref2d(SI.ImageSize(1:2), [xmin xmin+xL], [ymin ymin+yL]);
+hA = data.Panel.View.Comp.hAxis(1).Image;
+hPlotObj(1).Image = imshow(IA, RA, [], 'parent', hA);
 axis(hA, 'tight', 'equal')
+hA.XColor = AC;
+hA.YColor = AC;
+
+data.Panel.View.Comp.hX(1) = images.roi.Crosshair(hA, 'Position', [xmin+xL/2 ymin+yL/2], ...
+    ,LineWidth=1,Color="y");
+
+% Sagittal
+iSliceS = round(SI.ImageSize(2)/2);
+IS = squeeze(V(:, iSliceS, :));
+IS = IS';
+% IS = imrotate(IS, 90);
+% IS = flipud(IS);
+ymin = SI.PatientPositions(1, 2);
+zmin = SI.PatientPositions(1, 3);
+zmax = SI.PatientPositions(end, 3);
+RS = imref2d(SI.ImageSize([3, 1]), [ymin ymin+yL], [zmin zmax]);
+hA = data.Panel.View.Comp.hAxis(4).Image;
+
+hPlotObj(4).Image = imshow(IS, RS, [], 'parent', hA);
+
+axis(hA, 'tight', 'equal')
+hA.XAxisLocation = 'bottom';
+hA.YDir = 'normal';
+hA.XColor = AC;
+hA.YColor = AC;
+
+% Coronal
+iSliceC = round(SI.ImageSize(1)/2);
+IC = squeeze(V(iSliceC, :, :));
+IC = IC';
+% IC = imrotate(IC, 90);
+% IC = flipud(IC);
+RC = imref2d(SI.ImageSize([3, 2]), [xmin xmin+xL], [zmin zmax]);
+hA = data.Panel.View.Comp.hAxis(3).Image;
+hPlotObj(3).Image = imshow(IC, RC, [], 'parent', hA);
+
+axis(hA, 'tight', 'equal')
+hA.XAxisLocation = 'bottom';
+hA.YDir = 'normal';
+hA.XColor = AC;
+hA.YColor = AC;
+
 
 % 
 % % template box
