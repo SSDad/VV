@@ -24,7 +24,7 @@ data.FileInfo.VolumePath = VolumePath;
 %% load image data
 hWB = waitbar(0, 'Loading Volume...');
 
-path_MatData = fullfile(dataPath, 'MatData');
+path_MatData = fullfile(fileparts(dataPath), 'MatData');
 [~, fd_VolumePath] = fileparts(VolumePath);
 ffn_mat = fullfile(path_MatData, [fd_VolumePath, '.mat']);
 
@@ -59,9 +59,15 @@ hA.YColor = AC;
 
 data.Image.RA = RA;
 
+% XHair
 hPlotObj(1).X = images.roi.Crosshair(hA, 'Position', [xmin+xL/2 ymin+yL/2], ...
                                          LineWidth=0.5, Color='c', Tag = 'A');
 addlistener(hPlotObj(1).X, 'MovingROI', @CB_XMoving);
+
+% Boundaries
+hPlotObj(1).bd1 = line(hA, 'XData', [], 'YData', [], LineWidth=1, Color='g');
+hPlotObj(1).bd2 = line(hA, 'XData', [], 'YData', [], LineWidth=1, Color='c');
+hPlotObj(1).cent2 = line(hA, 'XData', [], 'YData', [], 'Marker', 'x', LineWidth=1, Color='r');
 
 % Sagittal
 iSliceS = round(SI.ImageSize(2)/2);
@@ -89,6 +95,10 @@ hPlotObj(4).X = images.roi.Crosshair(hA, 'Position', [ymin+yL/2 (zmin+zmax)/2], 
                                          LineWidth=0.5, Color='c', Tag = 'S');
 addlistener(hPlotObj(4).X, 'MovingROI', @CB_XMoving);
 
+% Boundaries
+hPlotObj(4).bd1 = line(hA, 'XData', [], 'YData', [], LineWidth=1, Color='g');
+hPlotObj(4).cent = line(hA, 'XData', [], 'YData', [], 'Marker', 'x', LineWidth=1, Color='r');
+hPlotObj(4).ball = line(hA, 'XData', [], 'YData', [], LineWidth=2, Color='r');
 
 % Coronal
 iSliceC = round(SI.ImageSize(1)/2);
@@ -111,6 +121,11 @@ data.Image.RC = RC;
 hPlotObj(3).X = images.roi.Crosshair(hA, 'Position', [xmin+xL/2 (zmin+zmax)/2], ...
                                          LineWidth=0.5, Color='c', Tag = 'C');
 addlistener(hPlotObj(3).X, 'MovingROI', @CB_XMoving);
+
+% Boundaries
+hPlotObj(3).bd1 = line(hA, 'XData', [], 'YData', [], LineWidth=1, Color='g');
+hPlotObj(3).ball = line(hA, 'XData', [], 'YData', [], LineWidth=2, Color='r');
+hPlotObj(3).cent = line(hA, 'XData', [], 'YData', [], 'Marker', 'x', LineWidth=1, Color='r');
 
 %% save data
 data.Panel.View.Comp.hPlotObj = hPlotObj;

@@ -1,0 +1,154 @@
+function Callback_Pushbutton_LoadImagePanel_Seg(src, evnt)
+
+hFig = ancestor(src, 'Figure');
+data = guidata(hFig);
+
+%% segmentation
+bPlot = 1;
+V = data.Image.V;
+SI = data.Image.SI;
+
+[AXL, COR, SEG] = fun_Sphere(V, SI, bPlot);
+
+%% Axial
+% update view
+hPlotObj = data.Panel.View.Comp.hPlotObj;
+hPlotObj(1).Image.CData = AXL.I; 
+set(hPlotObj(1).bd1, 'XData', AXL.bdxw, 'YData', AXL.bdyw);
+set(hPlotObj(1).bd2, 'XData', AXL.bdx2w, 'YData', AXL.bdy2w);
+set(hPlotObj(1).cent2, 'XData', AXL.xcent2w, 'YData', AXL.ycent2w);
+
+% update crosshair
+[~, y] = intrinsicToWorld(data.Image.RC,  1, AXL.iSliceA); 
+hPlotObj(3).X.Position(2) = y;
+hPlotObj(4).X.Position(2) = y;
+
+%% find coronal and sagittal planes
+% update view
+hPlotObj(3).Image.CData = COR.IC; 
+hPlotObj(4).Image.CData = SEG.IS;
+
+% update Xhair
+hPlotObj(1).X.Position = [AXL.xcent2w AXL.ycent2w]; 
+hPlotObj(3).X.Position(1) = AXL.xcent2w; 
+hPlotObj(4).X.Position(1) = AXL.ycent2w; 
+
+
+%% gourd crop
+R2 = round(R*(20/29));
+
+% coronal
+KC = IC(:, iSliceC-R2:iSliceC+R2);
+KC = rescale(KC);
+KCBW = imbinarize(1-KC);
+KCBW2 = bwareaopen(KCBW, round(prod(size(KC))/16));
+KCBW3 = imfill(KCBW2, 'holes');
+
+BB = bwboundaries(KCBW3);
+bd = BB{1};
+% cc = mean(bd);
+
+[bdxwC, bdywC] = intrinsicToWorld(data.Image.RC,  bd(:, 2)+iSliceC-R2-1, bd(:, 1)); 
+set(hPlotObj(3).bd1, 'XData', bdxwC, 'YData', bdywC);
+
+% ball
+polyin = polyshape(bdxwC, bdywC);
+[xlim, ylim] = boundingbox(polyin);
+R2 = diff(xlim)/2;
+ind = find(bdywC < ylim(1)+R2*3/2);
+bdx2 = bdxwC(ind);
+bdy2 = bdywC(ind);
+[xc2, yc2, R2, a] = circfit(bdx2, bdy2);
+
+set(hPlotObj(3).cent, 'XData', mean(xc2), 'YData', mean(yc2));
+
+theta = linspace(0, pi*2, 100);
+xx = xc2+R2*cos(theta);
+yy = yc2+R2*sin(theta);
+
+set(hPlotObj(3).ball, 'XData', xx, 'YData', yy);
+
+if bPlot
+    figure(13)
+    subplot(221), imshow(KC, []); axis xy on;
+    subplot(222), imshow(KCBW, []); axis xy on;
+    subplot(223), imshow(KCBW2, []); axis xy on;
+    subplot(224), imshow(KCBW3, []); axis xy on;
+    
+    subplot(221), hold on
+    plot(bd(:,2), bd(:,1), 'g', 'LineWidth', 2);
+    plot(cc(2), cc(1), 'rx', 'LineWidth', 2);
+end
+
+
+% sagittal
+KS = IS(:, iSliceS-R2:iSliceS+R2);
+KS = rescale(KS);
+KSBW = imbinarize(1-KS);
+KSBW2 = bwareaopen(KSBW, round(prod(size(KS))/8));
+KSBW3 = imfill(KSBW2, 'holes');
+
+BB = bwboundaries(KSBW3);
+bd = BB{1};
+cc = mean(bd);
+
+if bPlot
+    figure(14)
+    subplot(221), imshow(KS, []); axis xy on;
+    subplot(222), imshow(KSBW, []); axis xy on;
+    subplot(223), imshow(KSBW2, []); axis xy on;
+    subplot(224), imshow(KSBW3, []); axis xy on;
+    
+    subplot(221), hold on
+    plot(bd(:,2), bd(:,1), 'g', 'LineWidth', 2);
+    plot(cc(2), cc(1), 'rx', 'LineWidth', 2);
+end
+
+[bdxwS, bdywS] = intrinsicToWorld(data.Image.RS,  bd(:, 2)+iSliceS-R2-1, bd(:, 1)); 
+set(hPlotObj(4).bd1, 'XData', bdxwS, 'YData', bdywS);
+
+% ball
+polyin = polyshape(bdxwS, bdywS);
+[xlim, ylim] = boundingbox(polyin);
+R2 = diff(xlim)/2;
+ind = find(bdywS < ylim(1)+R2*3/2);
+bdx2 = bdxwS(ind);
+bdy2 = bdywS(ind);
+[xc2, yc2, R2, a] = circfit(bdx2, bdy2);
+
+set(hPlotObj(4).cent, 'XData', mean(xc2), 'YData', mean(yc2));
+
+theta = linspace(0, pi*2, 100);
+xx = xc2+R2*cos(theta);
+yy = yc2+R2*sin(theta);
+
+set(hPlotObj(4).ball, 'XData', xx, 'YData', yy);
+
+guidata(hFig, data);
+
+
+function   [xc,yc,R,a] = circfit(x,y)
+%
+%   [xc yx R] = circfit(x,y)
+%
+%   fits a circle  in x,y plane in a more accurate
+%   (less prone to ill condition )
+%  procedure than circfit2 but using more memory
+%  x,y are column vector where (x(i),y(i)) is a measured point
+%
+%  result is center point (yc,xc) and radius R
+%  an optional output is the vector of coeficient a
+% describing the circle's equation
+%
+%   x^2+y^2+a(1)*x+a(2)*y+a(3)=0
+%
+%  By:  Izhak bucher 25/oct /1991, 
+    x=x(:); y=y(:);
+   a=[x y ones(size(x))]\[-(x.^2+y.^2)];
+   xc = -.5*a(1);
+   yc = -.5*a(2);
+   R  =  sqrt((a(1)^2+a(2)^2)/4-a(3));
+
+end
+
+end

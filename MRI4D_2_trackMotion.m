@@ -1,0 +1,46 @@
+clearvars
+
+dataPath = 'Q:\Taeho\ZZZZ_FreeMax\MRI4D_04302023\Tumor Image';
+path_MatData = fullfile(fileparts(dataPath), 'MatData');
+
+FileList = dir(fullfile(path_MatData, '*.mat'));
+FileNames = {FileList.name}';
+
+ind = contains(FileNames, 'Average');
+FNs = FileNames(~ind);
+
+%% group
+strFN = string();
+for n = 1:numel(FNs)
+    strFN(n) = FNs{n}(7:end-17);
+end
+[C, ia, ic] = unique(strFN);
+
+for n = 1:numel(C)
+     FG{n} = FNs(ic == n);
+end
+
+%%
+iG = 0;
+TT = table();
+for n = 1:numel(FG)
+    if numel(FG{n}) == 5
+        iG = iG+1;
+        for m = 1:numel(FG{n})
+            ffn = fullfile(path_MatData, FG{n}{m});
+            load(ffn);
+            
+            [AXL, COR, SEG] = fun_Sphere(V, SI, 0);
+            
+            T = table(iG, string(FG{n}{m}), COR.yc2, SEG.yc2, (COR.yc2+SEG.yc2)/2,...
+                COR.R, SEG.R, (COR.R+SEG.R)/2);
+
+            TT = [TT; T];
+        end
+    end
+end
+
+TT.Properties.VariableNames = {'iGroup', 'Folder', 'corY' , 'segY', 'avgY', 'corR', 'segR', 'avgR'};
+
+ffn = fullfile(path_MatData, 'MTable.csv');
+writetable(TT, ffn);
